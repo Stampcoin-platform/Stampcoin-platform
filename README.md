@@ -1,1 +1,1 @@
-# Stampcoin-platform
+# Stampcoin-platform# Auto-deploy enabled
