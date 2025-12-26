@@ -3,6 +3,7 @@ import type { Express, Request, Response } from "express";
 import * as db from "../db";
 import { getSessionCookieOptions } from "./cookies";
 import { sdk } from "./sdk";
+import { ENV } from "./env";
 
 function getQueryParam(req: Request, key: string): string | undefined {
   const value = req.query[key];
@@ -11,6 +12,16 @@ function getQueryParam(req: Request, key: string): string | undefined {
 
 export function registerOAuthRoutes(app: Express) {
   app.get("/api/oauth/callback", async (req: Request, res: Response) => {
+    // Check if OAuth is configured
+    if (!ENV.oAuthServerUrl) {
+      console.error("[OAuth] OAuth is not configured. Set OAUTH_SERVER_URL environment variable.");
+      res.status(503).json({ 
+        error: "OAuth service is not configured",
+        message: "Please contact the administrator to enable authentication"
+      });
+      return;
+    }
+
     const code = getQueryParam(req, "code");
     const state = getQueryParam(req, "state");
 
