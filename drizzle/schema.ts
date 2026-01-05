@@ -9,7 +9,16 @@ export const users = mysqlTable("users", {
   name: text("name"),
   email: varchar("email", { length: 320 }),
   loginMethod: varchar("loginMethod", { length: 64 }),
-  role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
+  role: mysqlEnum("role", ["user", "admin", "expert", "appraiser"]).default("user").notNull(),
+  
+  // Expert/Appraiser credentials
+  expertiseAreas: text("expertiseAreas"), // JSON array of specialties
+  credentials: text("credentials"), // Professional certifications
+  verifiedExpert: boolean("verifiedExpert").default(false),
+  expertRating: decimal("expertRating", { precision: 3, scale: 2 }), // 0.00-5.00
+  totalAuthentications: int("totalAuthentications").default(0),
+  totalAppraisals: int("totalAppraisals").default(0),
+  
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
@@ -343,3 +352,66 @@ export const stampProvenance = mysqlTable("stampProvenance", {
 
 export type StampProvenance = typeof stampProvenance.$inferSelect;
 export type InsertStampProvenance = typeof stampProvenance.$inferInsert;
+
+/**
+ * Expert Applications table
+ */
+export const expertApplications = mysqlTable("expertApplications", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  expertiseAreas: text("expertiseAreas").notNull(), // JSON array
+  credentials: text("credentials").notNull(),
+  experience: text("experience"),
+  references: text("references"), // JSON array of references
+  certifications: text("certifications"), // JSON array of cert documents
+  motivation: text("motivation"),
+  status: mysqlEnum("status", ["pending", "reviewing", "approved", "rejected"]).default("pending").notNull(),
+  reviewedBy: int("reviewedBy").references(() => users.id),
+  reviewNotes: text("reviewNotes"),
+  reviewedAt: timestamp("reviewedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type ExpertApplication = typeof expertApplications.$inferSelect;
+export type InsertExpertApplication = typeof expertApplications.$inferInsert;
+
+/**
+ * Expert Assignments table - tracks which expert is assigned to which authentication
+ */
+export const expertAssignments = mysqlTable("expertAssignments", {
+  id: int("id").autoincrement().primaryKey(),
+  authenticationId: int("authenticationId").notNull().references(() => stampAuthentications.id, { onDelete: 'cascade' }),
+  expertId: int("expertId").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  assignedBy: int("assignedBy").notNull().references(() => users.id),
+  status: mysqlEnum("status", ["assigned", "accepted", "declined", "in_progress", "completed"]).default("assigned").notNull(),
+  priority: mysqlEnum("priority", ["low", "normal", "high", "urgent"]).default("normal").notNull(),
+  estimatedCompletionDays: int("estimatedCompletionDays"),
+  compensation: decimal("compensation", { precision: 10, scale: 2 }),
+  notes: text("notes"),
+  acceptedAt: timestamp("acceptedAt"),
+  completedAt: timestamp("completedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type ExpertAssignment = typeof expertAssignments.$inferSelect;
+export type InsertExpertAssignment = typeof expertAssignments.$inferInsert;
+
+/**
+ * Expert Reviews table - peer reviews and ratings
+ */
+export const expertReviews = mysqlTable("expertReviews", {
+  id: int("id").autoincrement().primaryKey(),
+  expertId: int("expertId").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  reviewerId: int("reviewerId").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  authenticationId: int("authenticationId").references(() => stampAuthentications.id),
+  rating: int("rating").notNull(), // 1-5 stars
+  accuracy: int("accuracy"), // 1-5 for work accuracy
+  timeliness: int("timeliness"), // 1-5 for meeting deadlines
+  professionalism: int("professionalism"), // 1-5 for professional conduct
+  comment: text("comment"),
+  isPublic: boolean("isPublic").default(false),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type ExpertReview = typeof expertReviews.$inferSelect;
+export type InsertExpertReview = typeof expertReviews.$inferInsert;

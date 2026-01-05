@@ -3,6 +3,8 @@
  * Handles stamp authentication and verification workflows
  */
 
+import * as aiAnalysis from './ai-analysis';
+
 export interface AuthenticationRequest {
   stampId: number;
   userId: number;
@@ -99,23 +101,13 @@ export async function analyzeStampImage(imageUrl: string): Promise<{
 }> {
   console.log('[Authentication] AI analysis for:', imageUrl);
 
-  // In production, integrate with:
-  // - Computer vision API for forgery detection
-  // - Image comparison with known authentic examples
-  // - Watermark and security feature detection
+  // Use comprehensive AI analysis
+  const analysis = await aiAnalysis.analyzeStampImage(imageUrl);
 
-  // Mock analysis
-  const mockConfidence = 75 + Math.floor(Math.random() * 20);
-  
   return {
-    isAuthentic: mockConfidence > 80,
-    confidenceScore: mockConfidence,
-    findings: [
-      'Image resolution sufficient for analysis',
-      'No obvious signs of digital manipulation detected',
-      'Printing characteristics consistent with stated period',
-      'Color profile matches expected range',
-    ],
+    isAuthentic: analysis.isAuthentic,
+    confidenceScore: analysis.confidenceScore,
+    findings: analysis.findings.map(f => `[${f.severity.toUpperCase()}] ${f.title}: ${f.description}`),
   };
 }
 

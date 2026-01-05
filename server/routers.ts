@@ -10,8 +10,7 @@ import Stripe from 'stripe';
 import { STAMP_PRODUCTS } from './products';
 import * as nftMinting from './nft-minting';
 import * as authentication from './authentication';
-import * as appraisal from './appraisal';
-
+import * as appraisal from './appraisal';import * as expertManagement from "./expert-management";
 function createTestStripeMock() {
   return {
     checkout: {
@@ -758,6 +757,128 @@ export const appRouter = router({
           return await db.getPartnerTotalEarnings(input.partnerId);
         }),
     }),
+  }),
+  
+  // Expert Network Management
+  experts: router({
+    // Apply to become an expert
+    apply: protectedProcedure
+      .input(z.object({
+        expertiseAreas: z.array(z.string()),
+        credentials: z.string(),
+        experience: z.string(),
+        references: z.array(z.object({
+          name: z.string(),
+          organization: z.string(),
+          contact: z.string(),
+        })),
+        certifications: z.array(z.string()), // URLs to cert documents
+        motivation: z.string(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        return await expertManagement.applyAsExpert({
+          userId: ctx.user.id,
+          ...input,
+        });
+      }),
+    
+    // Review expert application (admin only)
+    reviewApplication: protectedProcedure
+      .input(z.object({
+        applicationId: z.number(),
+        approved: z.boolean(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Unauthorized: Admin access required');
+        }
+        return await expertManagement.reviewExpertApplication(
+          input.applicationId,
+          ctx.user.id,
+          input.approved,
+          input.notes
+        );
+      }),
+    
+    // Get list of available experts
+    getAvailable: publicProcedure
+      .input(z.object({
+        expertiseArea: z.string().optional(),
+        minRating: z.number().optional(),
+        maxWorkload: z.number().optional(),
+      }))
+      .query(async ({ input }) => {
+        return await expertManagement.getAvailableExperts(input);
+      }),
+    
+    // Assign expert to authentication task (admin or auto-assign)
+    assign: protectedProcedure
+      .input(z.object({
+        authenticationId: z.number(),
+        expertiseRequired: z.array(z.string()),
+        priority: z.enum(['low', 'normal', 'high', 'urgent']).default('normal'),
+        estimatedDays: z.number().default(7),
+        compensation: z.string(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'admin' && ctx.user.role !== 'expert') {
+          throw new Error('Unauthorized');
+        }
+        return await expertManagement.assignExpert(input);
+      }),
+    
+    // Get expert workload
+    getWorkload: protectedProcedure
+      .input(z.object({ expertId: z.number() }))
+      .query(async ({ input, ctx }) => {
+        // Only admins or the expert themselves can view workload
+        if (ctx.user.role !== 'admin' && ctx.user.id !== input.expertId) {
+          throw new Error('Unauthorized');
+        }
+        return await expertManagement.getExpertWorkload(input.expertId);
+      }),
+    
+    // Submit review of expert's work
+    submitReview: protectedProcedure
+      .input(z.object({
+        expertId: z.number(),
+        authenticationId: z.number(),
+        rating: z.number().min(1).max(5),
+        accuracy: z.number().min(1).max(5),
+        timeliness: z.number().min(1).max(5),
+        professionalism: z.number().min(1).max(5),
+        comment: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        return await expertManagement.submitExpertReview({
+          ...input,
+          reviewerId: ctx.user.id,
+        });
+      }),
+    
+    // Get expert statistics
+    getStats: publicProcedure
+      .input(z.object({ expertId: z.number() }))
+      .query(async ({ input }) => {
+        return await expertManagement.getExpertStats(input.expertId);
+      }),
+    
+    // Get expert leaderboard
+    getLeaderboard: publicProcedure
+      .input(z.object({ limit: z.number().default(10) }))
+      .query(async ({ input }) => {
+        return await expertManagement.getExpertLeaderboard(input.limit);
+      }),
+    
+    // Auto-assign pending tasks (admin cron job)
+    autoAssign: protectedProcedure
+      .mutation(async ({ ctx }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new Error('Unauthorized');
+        }
+        return await expertManagement.autoAssignPendingTasks();
+      }),
   }),
 });
 

@@ -4,6 +4,7 @@
  */
 
 import { randomBytes } from 'crypto';
+import * as ipfs from './ipfs';
 
 export interface NftMetadata {
   name: string;
@@ -119,17 +120,45 @@ export async function mintNft(request: MintingRequest): Promise<MintingResult> {
       ...request.attributes,
     });
 
-    // In production:
-    // 1. Upload image to IPFS if not already there
-    // 2. Upload metadata JSON to IPFS
-    // 3. Call smart contract mint function
-    // 4. Wait for transaction confirmation
-    // 5. Return token ID and transaction hash
+    // Real IPFS upload (if credentials configured)
+    let metadataUri: string;
+    
+    if (process.env.PINATA_API_KEY || process.env.NFT_STORAGE_API_KEY) {
+      try {
+        // Download image from URL
+        const imageResponse = await fetch(request.imageUrl);
+        const imageBuffer = Buffer.from(await imageResponse.arrayBuffer());
+        const fileName = `stamp-${request.stampId}-${Date.now()}.jpg`;
+        
+        // Upload to IPFS
+        const result = await ipfs.uploadStampNFT(
+          imageBuffer,
+          fileName,
+          'image/jpeg',
+          metadata
+        );
+        
+        metadataUri = result.metadataIpfs.ipfsUrl;
+        console.log('[NFT Minting] Uploaded to IPFS:', metadataUri);
+      } catch (uploadError: any) {
+        console.error('[NFT Minting] IPFS upload failed, using mock:', uploadError.message);
+        metadataUri = `ipfs://QmMock${randomBytes(16).toString('hex')}/metadata.json`;
+      }
+    } else {
+      // Fallback to mock for development
+      metadataUri = `ipfs://QmMock${randomBytes(16).toString('hex')}/metadata.json`;
+    }
+
+    // TODO: Call actual blockchain minting
+    // For production, integrate with ethers.js:
+    // const contract = new ethers.Contract(contractAddress, abi, signer);
+    // const tx = await contract.mintStamp(to, metadataUri, physicalStampId);
+    // const receipt = await tx.wait();
+    // const tokenId = receipt.events[0].args.tokenId;
 
     // Mock implementation
     const tokenId = generateTokenId();
     const contractAddress = getContractAddress(request.blockchainNetwork);
-    const metadataUri = `ipfs://QmMock${randomBytes(16).toString('hex')}/metadata.json`;
     const transactionHash = `0x${randomBytes(32).toString('hex')}`;
 
     console.log('[NFT Minting] Mock mint successful:', {
