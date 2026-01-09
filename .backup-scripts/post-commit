@@ -1,0 +1,24 @@
+#!/bin/bash
+
+###############################################################################
+# Git Hook - Post-Commit Backup
+# النسخ الاحتياطي التلقائي بعد كل Commit
+# Copyright © 2024-2026 Stampcoin Platform. All Rights Reserved.
+###############################################################################
+
+PROJECT_ROOT="/workspaces/Stampcoin-platform"
+BACKUP_SCRIPT="$PROJECT_ROOT/.backup-scripts/backup.sh"
+
+echo ""
+echo "🔄 تشغيل النسخ الاحتياطي التلقائي بعد الـ Commit..."
+echo "Running automatic backup after commit..."
+echo ""
+
+# تشغيل سكريبت النسخ الاحتياطي
+if [ -f "$BACKUP_SCRIPT" ]; then
+    bash "$BACKUP_SCRIPT"
+else
+    echo "⚠️ سكريبت النسخ الاحتياطي غير موجود!"
+fi
+
+exit 0
