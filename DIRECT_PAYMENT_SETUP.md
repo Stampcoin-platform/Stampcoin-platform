@@ -25,6 +25,7 @@ The StampCoin platform has been configured to accept direct payments to your Str
 
 ```dotenv
 # في .env.local أو .env
+# ⚠️ نسخ مفاتيحك من https://dashboard.stripe.com/apikeys
 STRIPE_SECRET_KEY=sk_test_YOUR_SECRET_KEY_HERE
 STRIPE_ENABLED=true
 ```
