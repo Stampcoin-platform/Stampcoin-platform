@@ -22,7 +22,7 @@ exec(`cat ${filename}`)
 ### Quick Start
 
 ```typescript
-import { safeExecute, safeSpawn } from './server/utils/safe-command';
+import { safeExecute, safeSpawn } from '../server/utils/safe-command';
 
 // Execute a command
 const result = await safeExecute('ls', ['-la', '/path']);

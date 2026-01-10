@@ -7,7 +7,7 @@ This file demonstrates how to use the safe command execution utilities in the St
 ### Executing a Simple Command
 
 ```typescript
-import { safeExecute } from './server/utils/safe-command';
+import { safeExecute } from '../server/utils/safe-command';
 
 // ✅ SECURE: Execute command with array arguments
 async function listFiles(directory: string) {
@@ -24,7 +24,7 @@ async function listFiles(directory: string) {
 ### Reading a File Safely
 
 ```typescript
-import { safeReadFile } from './server/utils/safe-command';
+import { safeReadFile } from '../server/utils/safe-command';
 
 // ✅ SECURE: Safe file reading with path validation
 async function readUserFile(filename: string) {
@@ -51,7 +51,7 @@ await readUserFile('../../../etc/passwd'); // ❌ Throws error: Directory traver
 ### Installing npm Packages
 
 ```typescript
-import { safeNpmInstall, isValidPackageName } from './server/utils/safe-command';
+import { safeNpmInstall, isValidPackageName } from '../server/utils/safe-command';
 
 // ✅ SECURE: Install package with validation
 async function installPackage(packageName: string) {
@@ -80,7 +80,7 @@ await installPackage('express; rm -rf /'); // ❌ Throws error: Invalid package 
 ### Streaming Output
 
 ```typescript
-import { safeSpawn } from './server/utils/safe-command';
+import { safeSpawn } from '../server/utils/safe-command';
 
 // ✅ SECURE: Execute with streaming output
 async function buildProject() {
@@ -109,7 +109,7 @@ async function buildProject() {
 ### Processing Multiple Files
 
 ```typescript
-import { safeExecute, sanitizeFilePath } from './server/utils/safe-command';
+import { safeExecute, sanitizeFilePath } from '../server/utils/safe-command';
 
 async function processFiles(filenames: string[], baseDir: string) {
   const results = [];
@@ -140,7 +140,7 @@ async function processFiles(filenames: string[], baseDir: string) {
 ### Custom Environment Variables
 
 ```typescript
-import { safeExecute } from './server/utils/safe-command';
+import { safeExecute } from '../server/utils/safe-command';
 
 async function runWithCustomEnv() {
   const result = await safeExecute('node', ['script.js'], {
@@ -159,7 +159,7 @@ async function runWithCustomEnv() {
 ### Validating User Input
 
 ```typescript
-import { isValidFilename, sanitizeFilePath } from './server/utils/safe-command';
+import { isValidFilename, sanitizeFilePath } from '../server/utils/safe-command';
 
 function handleUserUpload(userFilename: string, userPath: string) {
   // Validate filename
@@ -187,7 +187,7 @@ handleUserUpload('document.pdf', '../../../etc'); // ❌ Throws: Directory trave
 
 ```typescript
 import express from 'express';
-import { safeExecute, isValidFilename } from './server/utils/safe-command';
+import { safeExecute, isValidFilename } from '../server/utils/safe-command';
 
 const app = express();
 
@@ -226,7 +226,7 @@ app.post('/api/convert-file', async (req, res) => {
 ```typescript
 import { z } from 'zod';
 import { publicProcedure } from './trpc';
-import { safeExecute, isValidPackageName } from './server/utils/safe-command';
+import { safeExecute, isValidPackageName } from '../server/utils/safe-command';
 
 const installPackageProcedure = publicProcedure
   .input(z.object({
@@ -257,7 +257,7 @@ const installPackageProcedure = publicProcedure
 ### Background Job
 
 ```typescript
-import { safeSpawn } from './server/utils/safe-command';
+import { safeSpawn } from '../server/utils/safe-command';
 
 async function processVideoInBackground(videoId: string, filepath: string) {
   const { process, promise } = safeSpawn('ffmpeg', [
@@ -335,7 +335,7 @@ Always test your command execution with malicious input:
 
 ```typescript
 import { describe, it, expect } from 'vitest';
-import { safeExecute } from './server/utils/safe-command';
+import { safeExecute } from '../server/utils/safe-command';
 
 describe('Security Tests', () => {
   it('should not execute injected commands', async () => {
